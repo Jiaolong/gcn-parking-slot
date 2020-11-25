@@ -14,15 +14,20 @@ class PointDetector(nn.modules.Module):
         input_channel_size = cfg.input_channels
         depth_factor = cfg.depth_factor
         output_channel_size = cfg.output_channels
-        '''
+        
         if cfg.backbone == 'Darknet':
             self.feature_extractor = YetAnotherDarknet(input_channel_size, depth_factor)
         elif cfg.backbone == 'VGG16':
             self.feature_extractor = vgg16()
-        '''
-        # TO DO
-        self.feature_extractor = YetAnotherDarknet(input_channel_size, depth_factor)#resnet50()#vgg16()#YetAnotherDarknet(input_channel_size, depth_factor) #resnet18()#
-
+        elif cfg.backbone == 'resnet18':
+            self.feature_extractor = resnet18()
+        elif cfg.backbone == 'resnet50':
+            self.feature_extractor = resnet50()
+        elif cfg.backbone == 'MobileNetV3':
+            self.feature_extractor = MobileNetV3()
+        else:
+            raise ValueError('{} is not implemented!'.format(cfg.backbone))
+        
         layers_points = []
         layers_points += define_detector_block(16 * depth_factor)
         layers_points += define_detector_block(16 * depth_factor)

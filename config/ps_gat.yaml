@@ -1,0 +1,88 @@
+# train
+batch_size: &batch_size 16
+epochs: 200
+start_epoch: 0
+launcher: 'none'
+ckpt_save_interval: 1
+max_ckpt_save_num: 100
+
+# global settings
+input_channels: &input_channels 3
+
+# dataset settings
+dataset_type: &dataset_type "ParkingSlotDataset"
+data_root: &data_root "datasets/parking_slot/"
+max_points: &max_points 10
+
+data:  
+  train:
+    type: *dataset_type
+    root_path: *data_root
+    max_points: *max_points
+    mode: 'train'
+    batch_size: *batch_size
+    num_workers: 4
+    use_image: true
+    
+  val:
+    type: *dataset_type
+    root_path: *data_root
+    max_points: *max_points
+    mode: 'val'
+    batch_size: *batch_size
+    num_workers: 4
+    use_image: true
+    
+      
+# model settings
+model:
+  type: PointDetectorBase
+  task: 'point_detection'
+
+  max_points: *max_points
+  input_channels: 3
+  output_channels: 3
+  depth_factor: 32
+  feature_map_size: 16
+  descriptor_dim: 128
+
+  point_thresh: 0.008
+  boundary_thresh: 0.05
+
+  use_gnn: true
+ 
+  graph_encoder:
+      type: 'GAT' # DGCNN or GAT
+      point_encoder:
+          output_dim: 128
+          layers: [32, 64] # 32, 64, 128
+      gnn:
+          k: 10 # for DGCNN
+          gat_layers: 3 # for GAT
+          proj_dim: 64
+
+  edge_predictor:
+      input_dim: 128 # 2 * proj_dim
+      layers: [256, 128]
+
+  losses:
+      weight_point: 100.0
+      weight_edge: 1.0
+
+optimization:
+    optimizer: adam_onecycle
+    lr: 0.003
+    weight_decay: 0.01
+    momentum: 0.9
+
+    moms: [0.95, 0.85]
+    pct_start: 0.4
+    div_factor: 10
+    decay_step_list: [50, 100]
+    lr_decay: 0.1
+    lr_clip: 0.0000001
+
+    lr_warmup: false
+    warmup_epoch: 1
+
+    grad_norm_clip: 10

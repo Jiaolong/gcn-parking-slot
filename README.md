@@ -1,7 +1,7 @@
 
 # Attentional Graph Neural Network for Parking Slot Detection
 
-![image](https://github.com/Jiaolong/gcn-parking-slot/blob/master/images/annimated.gif)
+![image](https://github.com/Jiaolong/gcn-parking-slot/blob/main/images/animated.gif)
 
 Repository for the paper ["Attentional Graph Neural Network for Parking Slot Detection"](https://arxiv.org/).
 ```

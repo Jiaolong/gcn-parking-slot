@@ -151,6 +151,4 @@ class ParkingSlotDataset(BaseDataset):
         self.logger.info(precisions[-5:])
         self.logger.info('recalls:')
         self.logger.info(recalls[-5:])
-        print('precisions:', precisions[::200])
-        print('recalls:', recalls[::200])
         self.logger.info('Slot detection: average_precision {}'.format(average_precision))

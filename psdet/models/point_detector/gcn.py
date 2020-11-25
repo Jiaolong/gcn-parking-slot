@@ -132,24 +132,20 @@ class GCNEncoder(nn.Module):
 
     def forward(self, data_dict):
         points = data_dict['points'][:,:,:2] # [B, N num_points, 2]
-        #print('points1.shape:', points.shape)#[1, 10, 2]
+
         points = points.permute(0, 2, 1) # [B, 2, num_points]
-        #print('points2.shape:', points.shape)#[1, 2, 10]
+
         x = self.point_encoder(points) # [B, desc_dim, num_points]
-        #print('x.shape:', x.shape)#[1, 128, 10]
+
         desc = data_dict['descriptors'] # [B, desc_dim, num_points]
-        #print('desc.shape:', desc.shape)#[1, 128, 10]
-        
+
         x += desc
-        #print('x.shape:',x.shape) #[1, 128, 10]
         
         # Multi-layer Transformer network.
         x = self.gnn(x)
-        #print('x2.shape:', x.shape)#[1, 128, 10]
-        
+
         # MLP projection.
         x = self.proj(x)
-        #print('x3.shape:', x.shape)#[1, 64, 10]
                 
         data_dict['descriptors'] = x
         return data_dict

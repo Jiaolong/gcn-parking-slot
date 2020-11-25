@@ -1,7 +1,7 @@
 import math
 import torch
 from torch import nn
-from .utils import define_halve_unit, define_detector_block, YetAnotherDarknet, vgg16, resnet18, resnet50, MobileNetV3
+from .utils import define_halve_unit, define_detector_block, YetAnotherDarknet, vgg16, resnet18, resnet50
 from .gcn import GCNEncoder, EdgePredictor
 
 
@@ -23,8 +23,6 @@ class PointDetector(nn.modules.Module):
             self.feature_extractor = resnet18()
         elif cfg.backbone == 'resnet50':
             self.feature_extractor = resnet50()
-        elif cfg.backbone == 'MobileNetV3':
-            self.feature_extractor = MobileNetV3()
         else:
             raise ValueError('{} is not implemented!'.format(cfg.backbone))
         

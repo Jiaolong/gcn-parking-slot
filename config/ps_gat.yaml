@@ -3,8 +3,8 @@ batch_size: &batch_size 16
 epochs: 200
 start_epoch: 0
 launcher: 'none'
-ckpt_save_interval: 1
-max_ckpt_save_num: 100
+ckpt_save_interval: 2
+max_ckpt_save_num: 20
 
 # global settings
 input_channels: &input_channels 3
@@ -39,7 +39,7 @@ model:
   type: PointDetectorBase
   task: 'point_detection'
 
-  backbone: 'Darknet' # 'MobileNetV3', 'VGG16', 'Darknet', 'resnet18', 'resnet50'
+  backbone: 'VGG16' #  'VGG16', 'Darknet', 'resnet18', 'resnet50'
   max_points: *max_points
   input_channels: 3
   output_channels: 3

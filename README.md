@@ -17,13 +17,13 @@ Repository for the paper ["Attentional Graph Neural Network for Parking Slot Det
 
 - python 3.6
 
-- pytorch 1.7
+- pytorch 1.4+
 
 - other requirements: `pip install -r requirements.txt`
 
 ## Pretrained models
 
-Pre-trained weights can be downloaded [here](https://pan.baidu.com/s/137ZHZnsEfyaO4yaa5YoBIQ) (code:bc0a).
+Pre-trained weights can be downloaded [here](https://pan.baidu.com/s/137ZHZnsEfyaO4yaa5YoBIQ) (code:bc0a). **This model requires pytorch 1.7.0.**
 
 ## Prepare data
 
@@ -47,7 +47,7 @@ export PYTHONPATH=`pwd`
 - demo
 
 ```
-python3 tools/demo.py -c config/ps_gat.yaml -m cache/ps_gat/100/models/checkpoint_epoch_60.pth
+python3 tools/demo.py -c config/ps_gat.yaml -m cache/ps_gat/100/models/checkpoint_epoch_200.pth
 ```
 
 - train
@@ -59,7 +59,7 @@ python3 tools/train.py -c config/ps_gat.yaml
 - test
 
 ```
-python3 tools/test.py -c config/ps_gat.yaml -m cache/ps_gat/100/models/checkpoint_epoch_60.pth
+python3 tools/test.py -c config/ps_gat.yaml -m cache/ps_gat/100/models/checkpoint_epoch_200.pth
 ```
 
 ## References

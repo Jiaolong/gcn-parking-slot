@@ -15,15 +15,15 @@ Repository for the paper ["Attentional Graph Neural Network for Parking Slot Det
 
 ## Requirements
 
-- python3.5+
+- python 3.6
 
-- pytorch 1.0+
+- pytorch 1.7
 
 - other requirements: `pip install -r requirements.txt`
 
 ## Pretrained models
 
-Pre-trained weights can be downloaded [here]().
+Pre-trained weights can be downloaded [here](https://pan.baidu.com/s/137ZHZnsEfyaO4yaa5YoBIQ) (code:bc0a).
 
 ## Prepare data
 

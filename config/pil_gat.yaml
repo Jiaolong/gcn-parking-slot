@@ -37,6 +37,7 @@ model:
   type: PointDetectorBase
   task: 'point_detection'
 
+  detector: 'GAT' # 'DMPR', 'GAT'
   backbone: 'VGG16' #  'VGG16', 'Darknet', 'resnet18', 'resnet50'
   max_points: *max_points
   input_channels: 3

@@ -25,17 +25,17 @@ def detemine_point_shape(point, vector):
     vec_direct = math.atan2(vector[1], vector[0])
     vec_direct_up = math.atan2(-vector[0], vector[1])
     vec_direct_down = math.atan2(vector[0], -vector[1])
-    if point.shape < 0.5:
-        if direction_diff(vec_direct, point.direction) < BRIDGE_ANGLE_DIFF:
+    if point[1][3] < 0.5: # shape
+        if direction_diff(vec_direct, point[1][2]) < BRIDGE_ANGLE_DIFF:
             return PointShape.t_middle
-        if direction_diff(vec_direct_up, point.direction) < SEPARATOR_ANGLE_DIFF:
+        if direction_diff(vec_direct_up, point[1][2]) < SEPARATOR_ANGLE_DIFF:
             return PointShape.t_up
-        if direction_diff(vec_direct_down, point.direction) < SEPARATOR_ANGLE_DIFF:
+        if direction_diff(vec_direct_down, point[1][2]) < SEPARATOR_ANGLE_DIFF:
             return PointShape.t_down
     else:
-        if direction_diff(vec_direct, point.direction) < BRIDGE_ANGLE_DIFF:
+        if direction_diff(vec_direct, point[1][2]) < BRIDGE_ANGLE_DIFF:
             return PointShape.l_down
-        if direction_diff(vec_direct_up, point.direction) < SEPARATOR_ANGLE_DIFF:
+        if direction_diff(vec_direct_up, point[1][2]) < SEPARATOR_ANGLE_DIFF:
             return PointShape.l_up
     return PointShape.none
 
@@ -108,15 +108,15 @@ def get_predicted_points(prediction, point_thresh, boundary_thresh):
 
 def pass_through_third_point(marking_points, i, j, thresh):
     """See whether the line between two points pass through a third point."""
-    x_1 = marking_points[i].x
-    y_1 = marking_points[i].y
-    x_2 = marking_points[j].x
-    y_2 = marking_points[j].y
+    x_1 = marking_points[i][1][0]
+    y_1 = marking_points[i][1][1]
+    x_2 = marking_points[j][1][0]
+    y_2 = marking_points[j][1][1]
     for point_idx, point in enumerate(marking_points):
         if point_idx == i or point_idx == j:
             continue
-        x_0 = point.x
-        y_0 = point.y
+        x_0 = point[1][0]
+        y_0 = point[1][1]
         vec1 = np.array([x_0 - x_1, y_0 - y_1])
         vec2 = np.array([x_2 - x_0, y_2 - y_0])
         vec1 = vec1 / np.linalg.norm(vec1)
@@ -128,7 +128,7 @@ def pass_through_third_point(marking_points, i, j, thresh):
 
 def pair_marking_points(point_a, point_b):
     """See whether two marking points form a slot."""
-    vector_ab = np.array([point_b.x - point_a.x, point_b.y - point_a.y])
+    vector_ab = np.array([point_b[1][0] - point_a[1][0], point_b[1][1] - point_a[1][1]])
     vector_ab = vector_ab / np.linalg.norm(vector_ab)
     point_shape_a = detemine_point_shape(point_a, vector_ab)
     point_shape_b = detemine_point_shape(point_b, -vector_ab)
@@ -150,3 +150,9 @@ def pair_marking_points(point_a, point_b):
             return 1
         if point_shape_b.value > 3:
             return -1
+
+def calc_point_squre_dist(point_a, point_b):
+    """Calculate distance between two marking points."""
+    distx = point_a[0] - point_b[0]
+    disty = point_a[1] - point_b[1]
+    return distx ** 2 + disty ** 2

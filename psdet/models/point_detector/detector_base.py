@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from ..registry import POINT_DETECTOR
-from .directional import PointDetector, DirectionPointDetector
+from .directional import PointDetector, DirectionalPointDetector
 
 @POINT_DETECTOR.register
 class PointDetectorBase(nn.Module):
@@ -15,7 +15,7 @@ class PointDetectorBase(nn.Module):
         self.cfg = cfg
         
         if cfg.detector == 'DMPR':
-            self.model = DirectionPointDetector(cfg)
+            self.model = DirectionalPointDetector(cfg)
         else:
             self.model = PointDetector(cfg)
         

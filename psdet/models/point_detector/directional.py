@@ -1,9 +1,10 @@
 import math
+import numpy as np
 import torch
 from torch import nn
 from .gcn import GCNEncoder, EdgePredictor
 from .post_process import calc_point_squre_dist, pass_through_third_point
-from .post_process import get_predicted_points, get_predicted_directional_points
+from .post_process import get_predicted_points, get_predicted_directional_points, pair_marking_points
 from .utils import define_halve_unit, define_detector_block, YetAnotherDarknet, vgg16, resnet18, resnet50
 
 class PointDetector(nn.modules.Module):
@@ -180,7 +181,7 @@ class PointDetector(nn.modules.Module):
 
     def get_training_loss(self, data_dict):
         points_pred = data_dict['points_pred']
-        targets, mask = self.model.get_targets_points(data_dict)
+        targets, mask = self.get_targets_points(data_dict)
 
         disp_dict = {}
         
@@ -244,6 +245,7 @@ class DirectionalPointDetector(nn.modules.Module):
         point_pred = torch.sigmoid(point_pred)
         angle_pred = torch.tanh(angle_pred)
         points_pred = torch.cat((point_pred, angle_pred), dim=1)
+
         data_dict['points_pred'] = points_pred
         return data_dict
 
@@ -281,7 +283,7 @@ class DirectionalPointDetector(nn.modules.Module):
     
     def get_training_loss(self, data_dict):
         points_pred = data_dict['points_pred']
-        targets, mask = self.model.get_targets(data_dict)
+        targets, mask = self.get_targets(data_dict)
 
         disp_dict = {}
         
@@ -304,15 +306,16 @@ class DirectionalPointDetector(nn.modules.Module):
             points_pred = get_predicted_directional_points(marks, self.cfg.point_thresh, self.cfg.boundary_thresh)
             points_pred_batch.append(points_pred)
          
-            slots = self.inference_slots(points_pred)
-            for (i,j) in slots:
-                score = 1.0
-                x1, y1 = points_pred[i,:2]
-                x2, y2 = points_pred[j,:2]
-                slot = (score, np.array([x1, y1, x2, y2]))
-                slots.append(slot)
+            slots_infer = self.inference_slots(points_pred)
+            slots_tmp = []
+            for (i,j) in slots_infer:
+                score = min(points_pred[i][0], points_pred[j][0])
+                x1, y1 = points_pred[i][1][:2]
+                x2, y2 = points_pred[j][1][:2]
+                tmp = (score, np.array([x1, y1, x2, y2]))
+                slots_tmp.append(tmp)
 
-            slots_pred.append(slots)
+            slots_pred.append(slots_tmp)
 
         pred_dicts['points_pred'] = points_pred_batch
         pred_dicts['slots_pred'] = slots_pred
@@ -333,7 +336,7 @@ class DirectionalPointDetector(nn.modules.Module):
                 point_i = marking_points[i]
                 point_j = marking_points[j]
                 # Step 1: length filtration.
-                distance = calc_point_squre_dist(point_i, point_j)
+                distance = calc_point_squre_dist(point_i[1], point_j[1])
                 if not (VSLOT_MIN_DIST <= distance <= VSLOT_MAX_DIST
                         or HSLOT_MIN_DIST <= distance <= HSLOT_MAX_DIST):
                     continue

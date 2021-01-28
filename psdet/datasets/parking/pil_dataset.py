@@ -1,4 +1,3 @@
-import json
 import math
 import cv2 as cv
 import numpy as np
@@ -14,22 +13,28 @@ from .process_data import boundary_check, overlap_check, rotate_centralized_mark
 from .utils import match_marking_points, match_slots 
 
 @DATASETS.register
-class ParkingSlotDataset(BaseDataset):
+class PILDataset(BaseDataset):
 
     def __init__(self, cfg, logger=None):
-        super(ParkingSlotDataset, self).__init__(cfg=cfg, logger=logger)
+        super(PILDataset, self).__init__(cfg=cfg, logger=logger)
         
         assert(self.root_path.exists())
         
         if cfg.mode == 'train':
-            data_dir = self.root_path / 'ps_json_label' / 'training'
+            data_dir = self.root_path / 'train'
         elif cfg.mode == 'val':
-            data_dir = self.root_path / 'ps_json_label' / 'testing' / 'all'
+            data_dir = self.root_path / 'test'
  
-        assert(data_dir.exists())
+        label_dir = data_dir / 'label'
+        assert(label_dir.exists())
         
-        self.json_files = [p for p in data_dir.glob('*.json')]
-        self.json_files.sort()
+        self.label_files = []
+        for p in label_dir.glob('*.txt'):
+            t, _, _ = self.get_label(str(p))
+            if t == 1:
+                self.label_files.append(p)
+
+        self.label_files.sort()
         
         if cfg.mode == 'train': 
             # data augmentation
@@ -39,18 +44,47 @@ class ParkingSlotDataset(BaseDataset):
             self.image_transform = T.Compose([T.ToTensor()])
 
         if self.logger:
-            self.logger.info('Loading ParkingSlot {} dataset with {} samples'.format(cfg.mode, len(self.json_files)))
+            self.logger.info('Loading PIL {} dataset with {} samples'.format(cfg.mode, len(self.label_files)))
        
     def __len__(self):
-        return len(self.json_files)
-    
+        return len(self.label_files)
+   
+    def get_label(self, fname, split = '\t'):
+        with open(fname) as f:
+            lines = f.readlines()
+
+            t = int(lines[0][0])
+            angle = int(lines[1][:-1])
+            box_list = []
+
+            for line in lines[2:]:
+                box_data = line.strip().split(split)
+                box_list.append(box_data)
+            f.close()
+
+            return t, angle, box_list
+
     def __getitem__(self, idx):
-        json_file = Path(self.json_files[idx]) 
-        # load json
-        with open(str(json_file), 'r') as f:
-            data = json.load(f)
+        # load label
+        t, angle, boxes = self.get_label(self.label_files[idx]) 
         
-        marks = np.array(data['marks'])
+        slots = []
+        marks = []
+        for box in boxes:
+            parked, x1, y1, x2, y2, x3, y3, x4, y4 = box
+            p1 = [x1, y1]
+            p2 = [x2, y2]
+            if p1 not in marks:
+                marks.append(p1)
+            if p2 not in marks:
+                marks.append(p2)
+            idx_p1 = marks.index(p1)
+            idx_p2 = marks.index(p2)
+            slots.append([idx_p1, idx_p2])
+
+        marks = np.array(marks).astype(np.float32)
+        slots = np.array(slots)
+
         if len(marks.shape) < 2:
             marks = np.expand_dims(marks, axis=0)
 
@@ -58,11 +92,14 @@ class ParkingSlotDataset(BaseDataset):
         num_points = marks.shape[0]
         assert max_points >= num_points
 
-        # centralize (image size = 600 x 600)
-        marks[:,0:4] -= 300.5
-        
-        img_file = str(self.json_files[idx]).replace('.json', '.jpg').replace('ps_json_label', '')
+        img_file = str(self.label_files[idx]).replace('.txt', '.jpg').replace('label', 'image')
         image = Image.open(img_file)
+        w, h = image.size
+        
+        # normalize marks
+        marks[:,0] /= w
+        marks[:,1] /= h
+
         image = image.resize((512,512), Image.BILINEAR)
         
         if self.cfg.mode == 'train+' and np.random.rand() > 0.2:
@@ -75,7 +112,6 @@ class ParkingSlotDataset(BaseDataset):
                     marks = rotated_marks
                     break
 
-        marks = generalize_marks(marks)
         image = self.image_transform(image)
          
         # make sample with the max num points
@@ -83,13 +119,12 @@ class ParkingSlotDataset(BaseDataset):
         marks_full[:num_points] = marks
         match_targets = np.full((max_points, 2), -1, dtype=np.int32)
         
-        slots = np.array(data['slots'])
         if slots.size != 0:
             if len(slots.shape) < 2:
                 slots = np.expand_dims(slots, axis=0)
             for slot in slots:
-                match_targets[slot[0] - 1, 0] = slot[1] - 1
-                match_targets[slot[0] - 1, 1] = 0 # 90 degree slant
+                match_targets[slot[0], 0] = slot[1]
+                match_targets[slot[0], 1] = 0 # 90 degree slant
 
         input_dict = {
                 'marks': marks_full,

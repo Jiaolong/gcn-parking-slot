@@ -10,7 +10,7 @@ max_ckpt_save_num: 20
 input_channels: &input_channels 3
 
 # dataset settings
-dataset_type: &dataset_type "ParkingSlotDataset"
+dataset_type: &dataset_type "PILDataset"
 data_root: &data_root "datasets/PIL-Parking-Slot/"
 max_points: &max_points 10
 

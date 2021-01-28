@@ -1,4 +1,5 @@
 /cache
+/docker
 __pycache__
 *.py[cod]
 *$py.class

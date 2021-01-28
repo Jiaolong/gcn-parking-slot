@@ -1,9 +1,10 @@
 import math
 import torch
 from torch import nn
-from .utils import define_halve_unit, define_detector_block, YetAnotherDarknet, vgg16, resnet18, resnet50
 from .gcn import GCNEncoder, EdgePredictor
-
+from .post_process import calc_point_squre_dist, pass_through_third_point
+from .post_process import get_predicted_points, get_predicted_directional_points
+from .utils import define_halve_unit, define_detector_block, YetAnotherDarknet, vgg16, resnet18, resnet50
 
 class PointDetector(nn.modules.Module):
     """Detector for point without direction."""
@@ -14,6 +15,8 @@ class PointDetector(nn.modules.Module):
         input_channel_size = cfg.input_channels
         depth_factor = cfg.depth_factor
         output_channel_size = cfg.output_channels
+        
+        self.point_loss_func = nn.MSELoss().cuda()
         
         if cfg.backbone == 'Darknet':
             self.feature_extractor = YetAnotherDarknet(input_channel_size, depth_factor)
@@ -129,6 +132,88 @@ class PointDetector(nn.modules.Module):
                 mask[batch_idx, 1:3, row, col].fill_(1.)
         return targets, mask
 
+    def post_processing(self, data_dict):
+        ret_dicts = {}
+        pred_dicts = {}
+        
+        points_pred = data_dict['points_pred']
+        descriptor_map = data_dict['descriptor_map']
+        
+        points_pred_batch = []
+        slots_pred = []
+        for b, marks in enumerate(points_pred):
+            points_pred = get_predicted_points(marks, self.cfg.point_thresh, self.cfg.boundary_thresh)
+            points_pred_batch.append(points_pred)
+         
+            if len(points_pred) > 0:
+                points_np = np.concatenate([p[1].reshape(1, -1) for p in points_pred], axis=0)
+            else:
+                points_np = np.zeros((self.cfg.max_points, 2))
+
+            if points_np.shape[0] < self.cfg.max_points:
+                points_full = np.zeros((self.cfg.max_points, 2))
+                points_full[:len(points_pred)] = points_np
+            else:
+                points_full = points_np
+
+            pred_dict = self.predict_slots(descriptor_map[b].unsqueeze(0), torch.Tensor(points_full).unsqueeze(0).cuda())
+            edges = pred_dict['edges_pred'][0]
+            n = points_np.shape[0]
+            m = points_full.shape[0]
+            
+            slots = []
+            for i in range(n):
+                for j in range(n):
+                    idx = i * m + j
+                    score = edges[0, idx]
+                    if score > 0.5:
+                        x1, y1 = points_np[i,:2]
+                        x2, y2 = points_np[j,:2]
+                        slot = (score, np.array([x1, y1, x2, y2]))
+                        slots.append(slot)
+
+            slots_pred.append(slots)
+
+        pred_dicts['points_pred'] = points_pred_batch
+        pred_dicts['slots_pred'] = slots_pred
+        return pred_dicts, ret_dicts
+
+    def get_training_loss(self, data_dict):
+        points_pred = data_dict['points_pred']
+        targets, mask = self.model.get_targets_points(data_dict)
+
+        disp_dict = {}
+        
+        loss_point = self.point_loss_func(points_pred * mask, targets * mask)
+        
+        edges_pred = data_dict['edges_pred']
+        edges_target = torch.zeros_like(edges_pred)
+        edges_mask = torch.zeros_like(edges_pred)
+
+        match_targets = data_dict['match_targets']
+        npoints = data_dict['npoints']
+
+        for b in range(edges_pred.shape[0]):
+            n = npoints[b].long()
+            y = match_targets[b]
+            m = y.shape[0]
+            for i in range(n):
+                t = y[i, 0]                
+                for j in range(n):
+                    idx = i * m + j
+                    edges_mask[b, 0, idx] = 1
+                    if j == t:
+                        edges_target[b, 0, idx] = 1
+                   
+        loss_edge = F.binary_cross_entropy(edges_pred, edges_target, edges_mask)
+        loss_all = self.cfg.losses.weight_point * loss_point + self.cfg.losses.weight_edge * loss_edge
+
+        tb_dict = {
+            'loss_all': loss_all.item(),
+            'loss_point': loss_point.item(),
+            'loss_edge': loss_edge.item()
+        }
+        return loss_all, tb_dict, disp_dict
 
 class DirectionalPointDetector(nn.modules.Module):
     """Detector for point with direction."""
@@ -147,6 +232,8 @@ class DirectionalPointDetector(nn.modules.Module):
         layers += [nn.Conv2d(32 * depth_factor, output_channel_size,
                              kernel_size=1, stride=1, padding=0, bias=False)]
         self.predict = nn.Sequential(*layers)
+        
+        self.loss_func = nn.MSELoss().cuda()
 
     def forward(self, data_dict):
         img = data_dict['image']
@@ -191,3 +278,71 @@ class DirectionalPointDetector(nn.modules.Module):
 
                 mask[batch_idx, 1:6, row, col].fill_(1.)
         return targets, mask
+    
+    def get_training_loss(self, data_dict):
+        points_pred = data_dict['points_pred']
+        targets, mask = self.model.get_targets(data_dict)
+
+        disp_dict = {}
+        
+        loss_all = self.loss_func(points_pred * mask, targets * mask)
+        
+        tb_dict = {
+            'loss_all': loss_all.item()
+        }
+        return loss_all, tb_dict, disp_dict
+    
+    def post_processing(self, data_dict):
+        ret_dicts = {}
+        pred_dicts = {}
+        
+        points_pred = data_dict['points_pred']
+        
+        points_pred_batch = []
+        slots_pred = []
+        for b, marks in enumerate(points_pred):
+            points_pred = get_predicted_directional_points(marks, self.cfg.point_thresh, self.cfg.boundary_thresh)
+            points_pred_batch.append(points_pred)
+         
+            slots = self.inference_slots(points_pred)
+            for (i,j) in slots:
+                score = 1.0
+                x1, y1 = points_pred[i,:2]
+                x2, y2 = points_pred[j,:2]
+                slot = (score, np.array([x1, y1, x2, y2]))
+                slots.append(slot)
+
+            slots_pred.append(slots)
+
+        pred_dicts['points_pred'] = points_pred_batch
+        pred_dicts['slots_pred'] = slots_pred
+        return pred_dicts, ret_dicts
+
+    def inference_slots(self, marking_points):
+        """Inference slots based on marking points."""
+        VSLOT_MIN_DIST = 0.044771278151623496
+        VSLOT_MAX_DIST = 0.1099427457599304
+        HSLOT_MIN_DIST = 0.15057789144568634
+        HSLOT_MAX_DIST = 0.44449496544202816
+        SLOT_SUPPRESSION_DOT_PRODUCT_THRESH = 0.8
+
+        num_detected = len(marking_points)
+        slots = []
+        for i in range(num_detected - 1):
+            for j in range(i + 1, num_detected):
+                point_i = marking_points[i]
+                point_j = marking_points[j]
+                # Step 1: length filtration.
+                distance = calc_point_squre_dist(point_i, point_j)
+                if not (VSLOT_MIN_DIST <= distance <= VSLOT_MAX_DIST
+                        or HSLOT_MIN_DIST <= distance <= HSLOT_MAX_DIST):
+                    continue
+                # Step 2: pass through filtration.
+                if pass_through_third_point(marking_points, i, j, SLOT_SUPPRESSION_DOT_PRODUCT_THRESH):
+                    continue
+                result = pair_marking_points(point_i, point_j)
+                if result == 1:
+                    slots.append((i, j))
+                elif result == -1:
+                    slots.append((j, i))
+        return slots

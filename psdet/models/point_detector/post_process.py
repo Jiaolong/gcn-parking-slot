@@ -1,6 +1,43 @@
 import math
-import numpy as np
 import torch
+import numpy as np
+from enum import Enum
+
+class PointShape(Enum):
+    """The point shape types used to pair two marking points into slot."""
+    none = 0
+    l_down = 1
+    t_down = 2
+    t_middle = 3
+    t_up = 4
+    l_up = 5
+
+def direction_diff(direction_a, direction_b):
+    """Calculate the angle between two direction."""
+    diff = abs(direction_a - direction_b)
+    return diff if diff < math.pi else 2*math.pi - diff
+
+def detemine_point_shape(point, vector):
+    """Determine which category the point is in."""
+    BRIDGE_ANGLE_DIFF = 0.09757113548987695 + 0.1384059287593468
+    SEPARATOR_ANGLE_DIFF = 0.284967562063968 + 0.1384059287593468
+
+    vec_direct = math.atan2(vector[1], vector[0])
+    vec_direct_up = math.atan2(-vector[0], vector[1])
+    vec_direct_down = math.atan2(vector[0], -vector[1])
+    if point.shape < 0.5:
+        if direction_diff(vec_direct, point.direction) < BRIDGE_ANGLE_DIFF:
+            return PointShape.t_middle
+        if direction_diff(vec_direct_up, point.direction) < SEPARATOR_ANGLE_DIFF:
+            return PointShape.t_up
+        if direction_diff(vec_direct_down, point.direction) < SEPARATOR_ANGLE_DIFF:
+            return PointShape.t_down
+    else:
+        if direction_diff(vec_direct, point.direction) < BRIDGE_ANGLE_DIFF:
+            return PointShape.l_down
+        if direction_diff(vec_direct_up, point.direction) < SEPARATOR_ANGLE_DIFF:
+            return PointShape.l_up
+    return PointShape.none
 
 def non_maximum_suppression(pred_points):
     """Perform non-maxmum suppression on marking points."""
@@ -69,7 +106,7 @@ def get_predicted_points(prediction, point_thresh, boundary_thresh):
                 predicted_points.append((prediction[0, i, j], marking_point))
     return non_maximum_suppression(predicted_points)
 
-def pass_through_third_point(marking_points, i, j):
+def pass_through_third_point(marking_points, i, j, thresh):
     """See whether the line between two points pass through a third point."""
     x_1 = marking_points[i].x
     y_1 = marking_points[i].y
@@ -84,7 +121,7 @@ def pass_through_third_point(marking_points, i, j):
         vec2 = np.array([x_2 - x_0, y_2 - y_0])
         vec1 = vec1 / np.linalg.norm(vec1)
         vec2 = vec2 / np.linalg.norm(vec2)
-        if np.dot(vec1, vec2) > config.SLOT_SUPPRESSION_DOT_PRODUCT_THRESH:
+        if np.dot(vec1, vec2) > thresh:
             return True
     return False
 

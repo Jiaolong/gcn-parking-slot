@@ -12,7 +12,7 @@ input_channels: &input_channels 3
 # dataset settings
 dataset_type: &dataset_type "PILDataset"
 data_root: &data_root "datasets/PIL-Parking-Slot/"
-max_points: &max_points 10
+max_points: &max_points 15
 
 data:  
   train:

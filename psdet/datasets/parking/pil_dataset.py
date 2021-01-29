@@ -1,5 +1,4 @@
 import math
-import cv2 as cv
 import numpy as np
 from PIL import Image
 from pathlib import Path
@@ -63,6 +62,22 @@ class PILDataset(BaseDataset):
             f.close()
 
             return t, angle, box_list
+    
+    def draw_slots(self, img, marks, slots):
+        import cv2
+        im_cv = np.array(img)
+        for mark in marks:
+            x, y = mark.astype(np.int32)
+            im_cv = cv2.circle(im_cv, (x, y), 3, (255, 0, 0), 3)
+
+        for (i, j) in slots:
+            x1, y1 = marks[i].astype(np.int32)
+            x2, y2 = marks[j].astype(np.int32)
+            im_cv = cv2.line(im_cv, (x1, y1), (x2, y2), (255, 0, 0), 3)
+
+        cv2.imshow("slots", im_cv)
+        cv2.waitKey(0)
+        exit(0)
 
     def __getitem__(self, idx):
         # load label
@@ -84,7 +99,7 @@ class PILDataset(BaseDataset):
 
         marks = np.array(marks).astype(np.float32)
         slots = np.array(slots)
-
+        
         if len(marks.shape) < 2:
             marks = np.expand_dims(marks, axis=0)
 
@@ -96,12 +111,16 @@ class PILDataset(BaseDataset):
         image = Image.open(img_file)
         w, h = image.size
         
+        # self.draw_slots(image, marks, slots)
+
         # normalize marks
         marks[:,0] /= w
         marks[:,1] /= h
 
         image = image.resize((512,512), Image.BILINEAR)
         
+        # self.draw_slots(image, marks * 512, slots)
+
         if self.cfg.mode == 'train+' and np.random.rand() > 0.2:
             angles = np.linspace(5, 360, 72)
             np.random.shuffle(angles)

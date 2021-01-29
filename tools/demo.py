@@ -72,7 +72,7 @@ def main():
     logger.info(model)
     
     image_dir = Path(cfg.data_root) / 'testing' / 'outdoor-normal daylight'
-    display = True
+    display = False
 
     # load checkpoint
     model.load_params_from_file(filename=cfg.ckpt, logger=logger, to_cpu=False)

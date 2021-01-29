@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -34,8 +35,9 @@ class PointDetectorBase(nn.Module):
         Returns:
         """
         #print('data_dict:', data_dict)
+        #t0 = time.time()
         data_dict = self.model(data_dict)
-
+        #t1 = time.time()
         if self.training:
             loss, tb_dict, disp_dict = self.get_training_loss(data_dict)
             ret_dict = {
@@ -44,6 +46,9 @@ class PointDetectorBase(nn.Module):
             return ret_dict, tb_dict, disp_dict
         else:
             pred_dicts, ret_dicts = self.post_processing(data_dict)
+            #t2 = time.time()
+            #print('point detect:', t1 - t0)
+            #print('slot detect:', t2 - t1)
             return pred_dicts, ret_dicts
      
     def post_processing(self, data_dict):

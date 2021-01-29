@@ -10,8 +10,8 @@ max_ckpt_save_num: 20
 input_channels: &input_channels 3
 
 # dataset settings
-dataset_type: &dataset_type "ParkingSlotDataset"
-data_root: &data_root "datasets/parking_slot/"
+dataset_type: &dataset_type "PSVDataset"
+data_root: &data_root "datasets/PSV_dataset/"
 max_points: &max_points 10
 
 data:  
@@ -45,7 +45,7 @@ model:
   feature_map_size: 16
   descriptor_dim: 128
 
-  point_thresh: 0.008
+  point_thresh: 0.005
   boundary_thresh: 0.05
 
   use_gnn: true

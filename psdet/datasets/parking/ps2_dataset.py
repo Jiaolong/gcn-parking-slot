@@ -14,17 +14,17 @@ from .process_data import boundary_check, overlap_check, rotate_centralized_mark
 from .utils import match_marking_points, match_slots 
 
 @DATASETS.register
-class PSVDataset(BaseDataset):
+class PS2Dataset(BaseDataset):
 
     def __init__(self, cfg, logger=None):
-        super(PSVDataset, self).__init__(cfg=cfg, logger=logger)
+        super(PS2Dataset, self).__init__(cfg=cfg, logger=logger)
         
         assert(self.root_path.exists())
         
         if cfg.mode == 'train':
-            data_dir = self.root_path / 'annotations' / 'train'
+            data_dir = self.root_path / 'annotations' / 'training'
         elif cfg.mode == 'val':
-            data_dir = self.root_path / 'annotations' / 'test'
+            data_dir = self.root_path / 'annotations' / 'testing' / 'all'
  
         assert(data_dir.exists())
         
@@ -80,7 +80,7 @@ class PSVDataset(BaseDataset):
         # centralize (image size = 600 x 600)
         marks[:,0:4] -= 300.5
         
-        img_file = str(self.mat_files[idx]).replace('.mat', '.jpg').replace('annotations', 'images')
+        img_file = str(self.mat_files[idx]).replace('.mat', '.jpg').replace('annotations', '')
         image = Image.open(img_file)
         image = image.resize((512,512), Image.BILINEAR)
         

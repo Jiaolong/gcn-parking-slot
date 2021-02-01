@@ -12,7 +12,7 @@ input_channels: &input_channels 3
 # dataset settings
 dataset_type: &dataset_type "PSVDataset"
 data_root: &data_root "datasets/PSV_dataset/"
-max_points: &max_points 10
+max_points: &max_points 15
 
 data:  
   train:

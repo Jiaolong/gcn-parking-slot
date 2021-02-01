@@ -74,7 +74,7 @@ class ParkingSlotDataset(BaseDataset):
                     marks = rotated_marks
                     break
 
-        marks = generalize_marks(marks)
+        marks = generalize_marks(marks, with_direction=self.cfg.with_direction)
         image = self.image_transform(image)
          
         # make sample with the max num points

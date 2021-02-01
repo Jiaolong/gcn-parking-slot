@@ -1,9 +1,9 @@
 # train
 batch_size: &batch_size 64
-epochs: 200
+epochs: 120
 start_epoch: 0
 launcher: 'none'
-ckpt_save_interval: 2
+ckpt_save_interval: 1
 max_ckpt_save_num: 20
 
 # global settings
@@ -21,6 +21,7 @@ data:
     max_points: *max_points
     mode: 'train'
     batch_size: *batch_size
+    with_direction: true
     num_workers: 0
     
   val:
@@ -28,6 +29,7 @@ data:
     root_path: *data_root
     max_points: *max_points
     mode: 'val'
+    with_direction: true
     batch_size: *batch_size
     num_workers: 0
     
@@ -37,37 +39,15 @@ model:
   type: PointDetectorBase
   task: 'point_detection'
 
-  detector: 'GAT' # 'DMPR', 'GAT'
-  backbone: 'VGG16' #  'VGG16', 'Darknet', 'resnet18', 'resnet50'
-  max_points: *max_points
+  detector: 'DMPR' # 'DMPR', 'GAT'
+  backbone: 'Darknet' #  'VGG16', 'Darknet', 'resnet18', 'resnet50'
   input_channels: 3
-  output_channels: 3
+  output_channels: 6 # DMPR: 6, GAT: 3
   depth_factor: 32
   feature_map_size: 16
-  descriptor_dim: 128
 
   point_thresh: 0.008
   boundary_thresh: 0.05
-
-  use_gnn: true
- 
-  graph_encoder:
-      type: 'GAT' # DGCNN or GAT
-      point_encoder:
-          output_dim: 128
-          layers: [32, 64] # 32, 64, 128
-      gnn:
-          k: 10 # for DGCNN
-          gat_layers: 3 # for GAT
-          proj_dim: 64
-
-  edge_predictor:
-      input_dim: 128 # 2 * proj_dim
-      layers: [256, 128]
-
-  losses:
-      weight_point: 100.0
-      weight_edge: 1.0
 
 optimization:
     optimizer: adam_onecycle

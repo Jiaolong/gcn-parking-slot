@@ -1,6 +1,6 @@
 # train
-batch_size: &batch_size 16
-epochs: 200
+batch_size: &batch_size 64
+epochs: 120
 start_epoch: 0
 launcher: 'none'
 ckpt_save_interval: 1
@@ -22,7 +22,7 @@ data:
     mode: 'train'
     batch_size: *batch_size
     with_direction: true
-    num_workers: 4
+    num_workers: 0
     
   val:
     type: *dataset_type
@@ -31,7 +31,7 @@ data:
     mode: 'val'
     with_direction: true
     batch_size: *batch_size
-    num_workers: 4
+    num_workers: 0
     
       
 # model settings

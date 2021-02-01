@@ -2,6 +2,7 @@ import math
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 from .gcn import GCNEncoder, EdgePredictor
 from .post_process import calc_point_squre_dist, pass_through_third_point
 from .post_process import get_predicted_points, get_predicted_directional_points, pair_marking_points

@@ -1,5 +1,5 @@
 # train
-batch_size: &batch_size 16
+batch_size: &batch_size 64
 epochs: 200
 start_epoch: 0
 launcher: 'none'
@@ -11,7 +11,7 @@ input_channels: &input_channels 3
 
 # dataset settings
 dataset_type: &dataset_type "ParkingSlotDataset"
-data_root: &data_root "datasets/PIL-Parking-Slot/"
+data_root: &data_root "datasets/parking_slot/"
 max_points: &max_points 10
 
 data:  
@@ -21,7 +21,7 @@ data:
     max_points: *max_points
     mode: 'train'
     batch_size: *batch_size
-    num_workers: 4
+    num_workers: 0
     
   val:
     type: *dataset_type
@@ -29,7 +29,7 @@ data:
     max_points: *max_points
     mode: 'val'
     batch_size: *batch_size
-    num_workers: 4
+    num_workers: 0
     
       
 # model settings

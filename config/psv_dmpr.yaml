@@ -1,0 +1,61 @@
+# train
+batch_size: &batch_size 64
+epochs: 120
+start_epoch: 0
+launcher: 'none'
+ckpt_save_interval: 1
+max_ckpt_save_num: 20
+
+# global settings
+input_channels: &input_channels 3
+
+# dataset settings
+dataset_type: &dataset_type "PSVDataset"
+data_root: &data_root "datasets/PSV_dataset/"
+max_points: &max_points 15
+
+data:  
+  train:
+    type: *dataset_type
+    root_path: *data_root
+    max_points: *max_points
+    mode: 'train'
+    batch_size: *batch_size
+    with_direction: true
+    num_workers: 0
+    
+  val:
+    type: *dataset_type
+    root_path: *data_root
+    max_points: *max_points
+    mode: 'val'
+    with_direction: true
+    batch_size: *batch_size
+    num_workers: 0
+    
+      
+# model settings
+model:
+  type: PointDetectorBase
+  task: 'point_detection'
+
+  detector: 'DMPR' # 'DMPR', 'GAT'
+  backbone: 'Darknet' #  'VGG16', 'Darknet', 'resnet18', 'resnet50'
+  input_channels: 3
+  output_channels: 6 # DMPR: 6, GAT: 3
+  depth_factor: 32
+  feature_map_size: 16
+
+  point_thresh: 0.008
+  boundary_thresh: 0.05
+
+optimization:
+    optimizer: adam_onecycle
+    weight_decay: 0.01
+
+    lr: 0.003
+    moms: [0.95, 0.85]
+    pct_start: 0.4
+    div_factor: 10
+
+    grad_norm_clip: 10

@@ -5,11 +5,11 @@
 
 Repository for the paper ["Attentional Graph Neural Network for Parking Slot Detection"](https://arxiv.org/).
 ```
-@inproceedings{gcn-parking-slot:2020,
+@article{gcn-parking-slot:2020,
   title={Attentional Graph Neural Network for Parking Slot Detection},
   author={M. Chen, J. Xu, L. Xiao, D. Zhao etal},
-  booktitle={arxiv},
-  year={2020}
+  journal={IEEE Robotics and Automation Letters (RA-L)},
+  year={2021}
 }
 ```
 
@@ -23,7 +23,12 @@ Repository for the paper ["Attentional Graph Neural Network for Parking Slot Det
 
 ## Pretrained models
 
-Pre-trained weights can be downloaded [here](https://pan.baidu.com/s/137ZHZnsEfyaO4yaa5YoBIQ) (code:bc0a). **This model requires pytorch 1.7.0.**
+Two pre-trained models can be downloaded with following links.
+
+| Link      | Code | Description |
+| ----------- | ---- | ----------- |
+| [Model0](https://pan.baidu.com/s/137ZHZnsEfyaO4yaa5YoBIQ) | bc0a | Trained with ps2.0 subset as in [1]|
+| [Model1](https://pan.baidu.com/s/1qogTCwtjGEtR0y-PB4Ibmg)   | pgig  | Trained with full ps2.0 dataset      |
 
 ## Prepare data
 
@@ -32,6 +37,7 @@ The original ps2.0 data and label can be found [here](https://github.com/Teoge/D
 ```
 ├── datasets
 │   └── parking_slot
+│       ├── annotations
 │       ├── ps_json_label 
 │       ├── testing
 │       └── training

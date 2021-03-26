@@ -9,7 +9,11 @@ Repository for the paper ["Attentional Graph Neural Network for Parking Slot Det
   title={Attentional Graph Neural Network for Parking Slot Detection},
   author={M. Chen, J. Xu, L. Xiao, D. Zhao etal},
   journal={IEEE Robotics and Automation Letters (RA-L)},
-  year={2021}
+  year={2021},
+  volume={6},
+  number={2},
+  pages={3445-3450},
+  doi={10.1109/LRA.2021.3064270}
 }
 ```
 
